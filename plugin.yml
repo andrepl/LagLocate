@@ -1,0 +1,29 @@
+name: LagLocate
+description: Helps locate overflow lag inducing setups.
+version: 1.0
+author: Malte Werschy <werschy.m@googlemail.com>
+website: http://www.no.website.yet.com
+
+main: com.github.mwerschy.LagLocate.LagLocate
+
+commands:
+  LagLocate:
+    description: This provides access to all of the LagLocate functionality.
+    usage: Syntax Error! /<command> for help.
+    permission: LagLocate.locate
+    permission-message: You don't have <permission>
+    aliases: [ll, findLag, lagAdmin, la]
+
+permissions:
+  LagLocate.admin:
+    description: Grants access to all of LagLocate's commands.
+    default: op
+    children:
+      LagLocate.locate: true
+      LagLocate.teleport: true
+  LagLocate.locate:
+    description: Allows users to locate lag inducing setups.
+    default: false
+  LagLocate.teleport:
+    description: Allows users to teleport to the source of the lag.
+    default: false
