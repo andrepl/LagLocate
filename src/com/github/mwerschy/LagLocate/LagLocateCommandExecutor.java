@@ -95,8 +95,24 @@ public class LagLocateCommandExecutor implements CommandExecutor {
                 if (filteredEntities.size() != 0) {
                     center = filteredEntities.get(0).getLocation();
                 }
+                
                 for (Entity entity : filteredEntities) {
-                    nearEntities = entity.getNearbyEntities(distance, distance, distance);
+                    nearEntities = new ArrayList<Entity>();
+                    if (type.toLowerCase().contains("item")) {
+                    	for (Entity e: entity.getNearbyEntities(distance, distance, distance)) {
+                    		if (e instanceof Item) {
+                    			nearEntities.add(e);
+                    		}
+                    	}
+                    } else if (type.toLowerCase().contains("creature")) {
+                        for (Entity e : entity.getNearbyEntities(distance, distance, distance)) {
+                            if (e instanceof LivingEntity) {
+                                nearEntities.add(e);
+                            }
+                        }
+                    } else if (type.toLowerCase().contains("all")) {
+                        nearEntities = entity.getNearbyEntities(distance, distance, distance);
+                    }
                     greatEntityGroup = (nearEntities.size() > greatEntityGroup.size() ? nearEntities : greatEntityGroup);
                     center = (nearEntities.size() > greatEntityGroup.size() ? entity.getLocation() : center);
                 }
