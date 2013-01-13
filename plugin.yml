@@ -13,7 +13,13 @@ commands:
     permission: LagLocate.locate
     permission-message: You don't have <permission>
     aliases: [ll, findLag, lagAdmin, la]
-
+  LLTP:
+    description: Teleport to the results of the last search.
+    usage: /lltp <resultNumber>
+    permission: LagLocate.teleport
+    permission-message: you don't have <permission>
+    aliases: [lagtp]
+    
 permissions:
   LagLocate.admin:
     description: Grants access to all of LagLocate's commands.

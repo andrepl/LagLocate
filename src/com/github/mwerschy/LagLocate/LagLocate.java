@@ -6,11 +6,13 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class LagLocate extends JavaPlugin {
     Entity[] items;
     Entity[] creatures;
-
+    LagLocateCommandExecutor executor;
     @Override
     public void onEnable() {
         getLogger().info("Enabled LagLocate");
-        getCommand("LagLocate").setExecutor(new LagLocateCommandExecutor());
+        executor = new LagLocateCommandExecutor();
+        getCommand("LagLocate").setExecutor(executor);
+        getCommand("LLTP").setExecutor(executor);
     }
 
     @Override

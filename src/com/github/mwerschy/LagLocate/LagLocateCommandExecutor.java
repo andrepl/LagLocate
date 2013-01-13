@@ -11,14 +11,27 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
 public class LagLocateCommandExecutor implements CommandExecutor {
     String[] helpMsg;
     double   distance;
     boolean  tp;
+    int maxResults = 5;
+    ArrayList<List<Entity>> greatEntityGroup = null;
     String   type;
 
+    private static Comparator<List<Entity>> sizeComparator = new Comparator<List<Entity>>() {
+		@Override
+		public int compare(List<Entity> l1, List<Entity> l2) {
+			return Integer.compare(l2.size(), l1.size());
+		}
+    };
+    
     LagLocateCommandExecutor() {
         helpMsg = new String[7];
         helpMsg[0] = "Welcome to the LagLocate Help System";
@@ -32,6 +45,39 @@ public class LagLocateCommandExecutor implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+    	if (cmd.getName().equalsIgnoreCase("lltp")) {
+    		
+    		if (!(sender instanceof Player)) {
+    			sender.sendMessage("This command must be run by a player.");
+    			return true;
+    		}
+    		Player player = (Player)sender;
+    		if (!sender.hasPermission("LagLocate.teleport")) {
+    			sender.sendMessage("You don't have permission to teleport.");
+    			return false;
+    		}
+    		if (greatEntityGroup == null || greatEntityGroup.size() == 0) {
+    			sender.sendMessage("There are no results to teleport to, try another search.");
+    			return true;
+    		}
+    		int num = 1;
+    		if (args.length == 1) {
+    			try {
+    				num = Integer.parseInt(args[0]);
+    			} catch (NumberFormatException ex) {
+    				sender.sendMessage("Invalid number: " + args[0]);
+    				return true;
+    			}
+    		}
+    		num -= 1;
+    		if (num < 0 || num >= greatEntityGroup.size()) {
+    			sender.sendMessage("please select a number between 1 and " + greatEntityGroup.size());
+    			return true;
+    		}
+    		player.teleport(greatEntityGroup.get(num).get(0).getLocation());
+    		return true;
+    	}
+    	
         if (cmd.getName().equalsIgnoreCase("LagLocate")) {
             if (args.length == 0) {
                 sender.sendMessage(helpMsg);
@@ -73,7 +119,7 @@ public class LagLocateCommandExecutor implements CommandExecutor {
                 Player commandSender = Bukkit.getPlayer(sender.getName());
                 List<Entity> entities = commandSender.getWorld().getEntities();
                 List<Entity> filteredEntities = new ArrayList<Entity>();
-                List<Entity> greatEntityGroup = new ArrayList<Entity>();
+                greatEntityGroup = new ArrayList<List<Entity>>();
                 List<Entity> nearEntities;
                 Location center = new Location(commandSender.getWorld(), 0, 0, 0);
 
@@ -92,6 +138,7 @@ public class LagLocateCommandExecutor implements CommandExecutor {
                 } else if (type.toLowerCase().contains("all")) {
                     filteredEntities = entities;
                 }
+                
                 if (filteredEntities.size() != 0) {
                     center = filteredEntities.get(0).getLocation();
                 }
@@ -113,14 +160,39 @@ public class LagLocateCommandExecutor implements CommandExecutor {
                     } else if (type.toLowerCase().contains("all")) {
                         nearEntities = entity.getNearbyEntities(distance, distance, distance);
                     }
-                    greatEntityGroup = (nearEntities.size() > greatEntityGroup.size() ? nearEntities : greatEntityGroup);
-                    center = (nearEntities.size() > greatEntityGroup.size() ? entity.getLocation() : center);
-                }
-                if (greatEntityGroup.size() > 0) {
-                    sender.sendMessage("X: " + center.getBlockX() + " Y: " + center.getBlockY() + " Z: " + center.getBlockZ());
-                    if (tp && sender.hasPermission("LagLocate.teleport")) {
-                        commandSender.teleport(center);
+                    if (greatEntityGroup.size() < maxResults) {
+                    	greatEntityGroup.add(nearEntities);
+                    	Collections.sort(greatEntityGroup, sizeComparator);
+                    } else {
+	                    for (int i=0;i<greatEntityGroup.size();i++) {
+	                    	if (nearEntities.size() > greatEntityGroup.get(i).size()) {
+	                    		greatEntityGroup.add(i, nearEntities);
+	                    		break;
+	                    	}
+	                    }
+	                    if (greatEntityGroup.size() > maxResults) {
+	                    	greatEntityGroup.remove(greatEntityGroup.size()-1);
+	                    }
                     }
+                }
+                Iterator<List<Entity>> it = greatEntityGroup.iterator();
+                HashSet<Location> locSet = new HashSet<Location>();
+                Location loc;
+                while (it.hasNext()) {
+                	loc = it.next().get(0).getLocation().getBlock().getLocation();
+                	if (locSet.contains(loc)) {
+                		it.remove();
+                		continue;
+                	} else {
+                		locSet.add(loc);
+                	}
+                }
+                
+                if (greatEntityGroup.size() > 0) {
+                	for (int i=0;i<greatEntityGroup.size();i++) {
+                		center = greatEntityGroup.get(i).get(0).getLocation();
+                		sender.sendMessage((i+1) + ") X: " + center.getBlockX() + " Y: " + center.getBlockY() + " Z: " + center.getBlockZ());	
+                	}
                 } else {
                     sender.sendMessage("No entities found with specified parameters.");
                 }
